@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.5-dev (https://github.com/novus/nvd3) 2017-02-27 */
+/* nvd3 version 1.8.5-dev (https://github.com/novus/nvd3) 2017-02-28 */
 (function(){
 
 // set up main nv object
@@ -2560,7 +2560,6 @@ nv.models.boxPlotChart = function() {
 
     return chart;
 }
-
 // Chart design based on the recommendations of Stephen Few. Implementation
 // based on the work of Clint Ivy, Jamie Love, and Jason Davies.
 // http://projects.instantcognition.com/protovis/bulletchart/
@@ -2608,7 +2607,7 @@ nv.models.bullet = function() {
         selection.each(function(d, i) {
             var availableWidth = width - margin.left - margin.right,
                 availableHeight = height - margin.top - margin.bottom;
-var min = d.min
+
             container = d3.select(this);
             nv.utils.initSVG(container);
 
@@ -2620,7 +2619,7 @@ var min = d.min
                 markerLabelz = markerLabels.call(this, d, i).slice(),
                 markerLineLabelz = markerLineLabels.call(this, d, i).slice(),
                 measureLabelz = measureLabels.call(this, d, i).slice();
-console.log("measurez2",measurez);
+
             // Sort labels according to their sorted values
             sortLabels(rangeLabelz, rangez);
             sortLabels(markerLabelz, markerz);
@@ -2638,6 +2637,8 @@ console.log("measurez2",measurez);
             var x1 = d3.scale.linear()
                 .domain( d3.extent(d3.merge([forceX, rangez])) )
                 .range(reverse ? [availableWidth, 0] : [0, availableWidth]);
+
+
 
             // Retrieve the old x-scale, if this is an update.
             var x0 = this.__chart__ || d3.scale.linear()
@@ -2675,14 +2676,14 @@ console.log("measurez2",measurez);
                 xp1 = function(d) { return d < 0 ? x1(d) : x1(0) };
 
             for(var i=0,il=rangez.length; i<il; i++){
-                var range = rangez[i];
+                var range = rangez[i] - forceX[0];
                 g.select('rect.nv-range'+i)
                     .datum(range)
                     .attr('height', availableHeight)
                     .transition()
                     .duration(duration)
                     .attr('width', w1(range))
-                    .attr('x', xp1(range))
+                    .attr('x', 0)
             }
 
             g.select('rect.nv-measure')
@@ -2690,24 +2691,22 @@ console.log("measurez2",measurez);
                 .attr('height', availableHeight / 3)
                 .attr('y', availableHeight / 3)
                 .on('mouseover', function() {
-                console.log("current(d)",d);
-                
                     dispatch.elementMouseover({
-                        value: measurez[0] + Number(d.min),
+                        value: measurez[0],
                         label: measureLabelz[0] || 'Mean',
                         color: d3.select(this).style("fill")
                     })
                 })
                 .on('mousemove', function() {
                     dispatch.elementMousemove({
-                        value: measurez[0] + Number(d.min),
+                        value: measurez[0],
                         label: measureLabelz[0] || 'Mean',
                         color: d3.select(this).style("fill")
                     })
                 })
                 .on('mouseout', function() {
                     dispatch.elementMouseout({
-                        value: measurez[0] + Number(d.min),
+                        value: measurez[0],
                         label: measureLabelz[0] || 'Mean',
                         color: d3.select(this).style("fill")
                     })
@@ -2715,9 +2714,9 @@ console.log("measurez2",measurez);
                 .transition()
                 .duration(duration)
                 .attr('width', measurez < 0 ?
-                    x1(0) - x1(measurez[0])
-                    : x1(measurez[0]) - x1(0))
-                .attr('x', xp1(measurez));
+                    Math.abs(x1(measurez[0]))
+                    : x1(measurez[0]))
+                .attr('x', 0);
 
             var h3 =  availableHeight / 6;
 
@@ -2732,11 +2731,7 @@ console.log("measurez2",measurez);
               .attr('class', 'nv-markerTriangle')
               .attr('d', 'M0,' + h3 + 'L' + h3 + ',' + (-h3) + ' ' + (-h3) + ',' + (-h3) + 'Z')
               .on('mouseover', function(d) {
-                console.log("move1(d)",d);
-
-                console.log("min",min);
-                var value = Number(d.value) + Number(min);
-                console.log("current",value);
+                var value = Number(d.value);
                 dispatch.elementMouseover({
                   value: value,
                   label: d.label || 'Current',
@@ -2767,8 +2762,9 @@ console.log("measurez2",measurez);
               .attr('transform', function(d) { return 'translate(' + x1(d.value) + ',' + (availableHeight / 2) + ')' });
 
             var markerLinesData = markerLinez.map( function(marker, index) {
-                return {value: marker, label: markerLineLabelz[index]}
+                return {value: forceX[0], label: markerLineLabelz[index]}
             });
+
             gEnter
               .selectAll("line.nv-markerLine")
               .data(markerLinesData)
@@ -2781,9 +2777,8 @@ console.log("measurez2",measurez);
               .attr('x2', function(d) { return x1(d.value) })
               .attr('y2', availableHeight - 2)
               .on('mouseover', function(d) {
-                console.log("move2(d)",d);
                 dispatch.elementMouseover({
-                  value: min,
+                  value: d.value,
                   label: d.label || 'Minimum',
                   color: d3.select(this).style("fill"),
                   pos: [x1(d.value), availableHeight/2]
@@ -2792,14 +2787,14 @@ console.log("measurez2",measurez);
               })
               .on('mousemove', function(d) {
                   dispatch.elementMousemove({
-                      value: min,
+                      value: d.value,
                       label: d.label || 'Minimum',
                       color: d3.select(this).style("fill")
                   })
               })
               .on('mouseout', function(d, i) {
                   dispatch.elementMouseout({
-                      value: min,
+                      value: d.value,
                       label: d.label || 'Minimum',
                       color: d3.select(this).style("fill")
                   })
@@ -2814,19 +2809,17 @@ console.log("measurez2",measurez);
 
             wrap.selectAll('.nv-range')
                 .on('mouseover', function(d,i) {
-                console.log("move3(d)",d);
-                console.log("min",min);
-                var max = Number(d) + Number(min);
+                var max = Number(d);
                     var label = rangeLabelz[i] || defaultRangeLabels[i];
                     dispatch.elementMouseover({
-                        value: max,
+                        value: forceX[1],
                         label: label,
                         color: d3.select(this).style("fill")
                     })
                 })
                 .on('mousemove', function() {
                     dispatch.elementMousemove({
-                        value: measurez[0] + min,
+                        value: measurez[0],
                         label: measureLabelz[0] || 'Previous',
                         color: d3.select(this).style("fill")
                     })
@@ -2834,7 +2827,7 @@ console.log("measurez2",measurez);
                 .on('mouseout', function(d,i) {
                     var label = rangeLabelz[i] || defaultRangeLabels[i];
                     dispatch.elementMouseout({
-                        value: d + min,
+                        value: d,
                         label: label,
                         color: d3.select(this).style("fill")
                     })
@@ -2905,6 +2898,7 @@ nv.models.bulletChart = function() {
         , ticks = null
         , noData = null
         , dispatch = d3.dispatch()
+        , forceX = [0]
         ;
     tooltip
         .duration(0)
@@ -2933,9 +2927,7 @@ nv.models.bulletChart = function() {
             var rangez = ranges.call(this, d, i).slice().sort(d3.descending),
                 markerz = markers.call(this, d, i).slice().sort(d3.descending),
                 measurez = measures.call(this, d, i).slice().sort(d3.descending);
-console.log("rangez",rangez);
-console.log("markerz",markerz);
-console.log("measurez1",measurez);
+
             // Setup containers and skeleton of chart
             var wrap = container.selectAll('g.nv-wrap.nv-bulletChart').data([d]);
             var wrapEnter = wrap.enter().append('g').attr('class', 'nvd3 nv-wrap nv-bulletChart');
@@ -2949,12 +2941,12 @@ console.log("measurez1",measurez);
 
             // Compute the new x-scale.
             var x1 = d3.scale.linear()
-                .domain([0, Math.max(rangez[0], (markerz[0] || 0), measurez[0])])  // TODO: need to allow forceX and forceY, and xDomain, yDomain
+                .domain([forceX[0], Math.max(rangez[0], (markerz[0] || 0), measurez[0])])  // TODO: need to allow forceX and forceY, and xDomain, yDomain
                 .range(reverse ? [availableWidth, 0] : [0, availableWidth]);
 
             // Retrieve the old x-scale, if this is an update.
             var x0 = this.__chart__ || d3.scale.linear()
-                .domain([0, Infinity])
+                .domain([forceX[0], Infinity])
                 .range(x1.range());
 
             // Stash the new scale.
@@ -2974,7 +2966,6 @@ console.log("measurez1",measurez);
                 .attr('class', 'nv-subtitle')
                 .attr('dy', '1em')
                 .text(function(d) { return d.subtitle; });
-
             bullet
                 .width(availableWidth)
                 .height(availableHeight);
@@ -3039,7 +3030,6 @@ console.log("measurez1",measurez);
     //------------------------------------------------------------
 
     bullet.dispatch.on('elementMouseover.tooltip', function(evt) {
-        console.log("evt",evt);
         evt['series'] = {
             key: evt.label,
             value: evt.value,
