@@ -23,6 +23,7 @@ nv.models.bulletChart = function() {
         , ticks = null
         , noData = null
         , dispatch = d3.dispatch()
+        , forceX = [0]
         ;
     tooltip
         .duration(0)
@@ -51,9 +52,7 @@ nv.models.bulletChart = function() {
             var rangez = ranges.call(this, d, i).slice().sort(d3.descending),
                 markerz = markers.call(this, d, i).slice().sort(d3.descending),
                 measurez = measures.call(this, d, i).slice().sort(d3.descending);
-console.log("rangez",rangez);
-console.log("markerz",markerz);
-console.log("measurez1",measurez);
+
             // Setup containers and skeleton of chart
             var wrap = container.selectAll('g.nv-wrap.nv-bulletChart').data([d]);
             var wrapEnter = wrap.enter().append('g').attr('class', 'nvd3 nv-wrap nv-bulletChart');
@@ -67,12 +66,12 @@ console.log("measurez1",measurez);
 
             // Compute the new x-scale.
             var x1 = d3.scale.linear()
-                .domain([0, Math.max(rangez[0], (markerz[0] || 0), measurez[0])])  // TODO: need to allow forceX and forceY, and xDomain, yDomain
+                .domain([forceX[0], Math.max(rangez[0], (markerz[0] || 0), measurez[0])])  // TODO: need to allow forceX and forceY, and xDomain, yDomain
                 .range(reverse ? [availableWidth, 0] : [0, availableWidth]);
 
             // Retrieve the old x-scale, if this is an update.
             var x0 = this.__chart__ || d3.scale.linear()
-                .domain([0, Infinity])
+                .domain([forceX[0], Infinity])
                 .range(x1.range());
 
             // Stash the new scale.
@@ -92,7 +91,6 @@ console.log("measurez1",measurez);
                 .attr('class', 'nv-subtitle')
                 .attr('dy', '1em')
                 .text(function(d) { return d.subtitle; });
-
             bullet
                 .width(availableWidth)
                 .height(availableHeight);
@@ -157,7 +155,6 @@ console.log("measurez1",measurez);
     //------------------------------------------------------------
 
     bullet.dispatch.on('elementMouseover.tooltip', function(evt) {
-        console.log("evt",evt);
         evt['series'] = {
             key: evt.label,
             value: evt.value,
