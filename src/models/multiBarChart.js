@@ -204,9 +204,11 @@ nv.models.multiBarChart = function() {
 
             x = multibar.xScale();
             y = multibar.yScale();
-            //x2 = multibar2.xScale();
-            x2 = x2Axis.scale();
+            x2 = multibar2.xScale();
+            //x2 = x2Axis.scale();
             y2 = multibar2.yScale();
+
+            var focusColumnWidth = availableWidth / x2.domain().length;
 
             var series = data
                 //.filter(function(d) { return !d.disabled && (d.bar) })
@@ -415,7 +417,7 @@ nv.models.multiBarChart = function() {
                 if (focusShowAxisX) {
                     x2Axis
                         .scale(x2)
-                        .ticks(nv.utils.calcTicksX(availableWidth/100, data))
+                        .ticks(nv.utils.calcTicksX((availableWidth)/100, data))
                         .tickSize(-availableHeight2, 0);
 
                     g.select('.nv-context .nv-x.nv-axis')
@@ -556,9 +558,8 @@ nv.models.multiBarChart = function() {
                             return !series.disabled;
                         })
                         .forEach(function(series,i) {
-                            var offset = brushExtent ? Math.ceil(brushExtent[0]) : 0;
+                            var offset = brushExtent ? Math.floor(brushExtent[0]/focusColumnWidth) : 0;
                             pointIndex = x.domain().indexOf(e.pointXValue) + offset;
-
                             var point = series.values[pointIndex];
                             if (point === undefined) return;
 
@@ -626,15 +627,15 @@ nv.models.multiBarChart = function() {
             function updateBrushBG() {
                 if (!brush.empty()) brush.extent(brushExtent);
                 brushBG
-                    .data([brush.empty() ? x2.domain() : brushExtent])
+                    .data([brush.empty() ? [0, availableWidth] : brushExtent])
                     .each(function(d,i) {
-                        var leftWidth = x2(d[0]) - x2.range()[0],
-                            rightWidth = x2.range()[1] - x2(d[1]);
+                        var leftWidth = d[0],
+                            rightWidth = availableWidth - d[1];
                         d3.select(this).select('.left')
                             .attr('width',  leftWidth < 0 ? 0 : leftWidth);
 
                         d3.select(this).select('.right')
-                            .attr('x', x2(d[1]))
+                            .attr('x', d[1])
                             .attr('width', rightWidth < 0 ? 0 : rightWidth);
                     });
             }
@@ -642,7 +643,7 @@ nv.models.multiBarChart = function() {
 
             function onBrush() {
                 brushExtent = brush.empty() ? null : brush.extent();
-                var extent = brush.empty() ? x2.domain() : brush.extent();
+                var extent = brush.empty() ? [0, availableWidth] : brush.extent();
                 dispatch.brush({extent: extent, brush: brush});
                 updateBrushBG();
 
@@ -653,7 +654,7 @@ nv.models.multiBarChart = function() {
                                 return {
                                     key: d.key,
                                     values: d.values.filter(function(d,i) {
-                                        return multibar.x()(d,i) >= Math.floor(extent[0]) && multibar.x()(d,i) <= Math.floor(extent[1]);
+                                        return multibar.x()(d,i) >= Math.floor(extent[0] / focusColumnWidth) && multibar.x()(d,i) <= Math.floor(extent[1] / focusColumnWidth);
                                     })
                                 }
                             })
