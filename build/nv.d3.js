@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.5-dev (https://github.com/novus/nvd3) 2017-03-20 */
+/* nvd3 version 1.8.5-dev (https://github.com/novus/nvd3) 2017-03-21 */
 (function(){
 
 // set up main nv object
@@ -8614,9 +8614,6 @@ nv.models.multiBarChart = function() {
                 container.selectAll('.nv-noData').remove();
             }
 
-            // Setup Scales
-            var dataBars = data.filter(function(d) { return d });
-
             x = multibar.xScale();
             y = multibar.yScale();
             x2 = multibar2.xScale();
@@ -8735,12 +8732,6 @@ nv.models.multiBarChart = function() {
                     return d.color || color(d, i);
                 }).filter(function(d,i) { return !data[i].disabled }));
 
-
-            var barsWrap = g.select('.nv-barsWrap')
-                .datum(data.filter(function(d) { return !d.disabled }));
-
-            barsWrap.call(multibar);
-
             // hide or show the focus context chart
             g.select('.nv-context').style('display', focusEnable ? 'initial' : 'none');
 
@@ -8751,14 +8742,16 @@ nv.models.multiBarChart = function() {
                     return d.color || color(d, i);
                 }).filter(function(d,i) { return !data[i].disabled }));
 
+            var barsWrap = g.select('.nv-barsWrap')
+                .datum(data.filter(function(d) { return !d.disabled }));
+            barsWrap.call(multibar);
             // Context component
             g.select('.nv-context')
                 .attr('transform', 'translate(0,' + ( availableHeight1 + margin.bottom + margin2.top) + ')')
 
             var contextBarsWrap = g.select('.nv-context .nv-barsWrap')
                 .datum(data.filter(function(d) { return !d.disabled }))
-
-            contextBarsWrap.transition().call(multibar2);
+            contextBarsWrap.call(multibar2);
 
             function setupAxis() {
                 // Setup Axes
@@ -9063,16 +9056,18 @@ nv.models.multiBarChart = function() {
                 updateBrushBG();
 
                 var focusBarsWrap = g.select('.nv-focus .nv-barsWrap')
-                    .datum(!dataBars.length ? [{values:[]}] :
-                        dataBars
-                            .map(function(d,i) {
-                                return {
-                                    key: d.key,
-                                    values: d.values.filter(function(d,i) {
-                                        return multibar.x()(d,i) >= Math.floor(extent[0] / focusColumnWidth) && multibar.x()(d,i) <= Math.floor(extent[1] / focusColumnWidth);
-                                    })
-                                }
-                            })
+                    .datum(
+                    data
+                        .filter(function(d) { return !d.disabled })
+                        .map(function(d,i) {
+                            return {
+                                key: d.key,
+                                area: d.area,
+                                values: d.values.filter(function(d,i) {
+                                    return multibar.x()(d,i) >= Math.floor(extent[0]/focusColumnWidth) && multibar.x()(d,i) <= Math.floor(extent[1]/focusColumnWidth);
+                                })
+                            }
+                        })
                 );
 
                 focusBarsWrap.transition().duration(transitionDuration).call(multibar);
