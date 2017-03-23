@@ -44,6 +44,7 @@ nv.models.multiBarChart = function() {
         , rotateLabels = 0
         , extent
         , brushExtent = null
+        , brushScaled = false
         , x //can be accessed via chart.xScale()
         , x2
         , y //can be accessed via chart.yScale()
@@ -202,10 +203,15 @@ nv.models.multiBarChart = function() {
             x = multibar.xScale();
             y = multibar.yScale();
             x2 = multibar2.xScale();
-            //x2 = x2Axis.scale();
             y2 = multibar2.yScale();
 
-            var focusColumnWidth = availableWidth / x2.domain().length;
+            var focusColumnWidth = x2.domain().length > 0 ? availableWidth / x2.domain().length : 1;
+            var scaledBrushExtent = [brushExtent[0]*focusColumnWidth,brushExtent[1]*focusColumnWidth];
+
+            if (!brushScaled && focusColumnWidth > 1) {
+                brushScaled = true;
+                brushExtent = scaledBrushExtent;
+            }
 
             var series = data
                 //.filter(function(d) { return !d.disabled && (d.bar) })
@@ -699,6 +705,7 @@ nv.models.multiBarChart = function() {
         showLegend: {get: function(){return showLegend;}, set: function(_){showLegend=_;}},
         legendPosition: {get: function(){return legendPosition;}, set: function(_){legendPosition=_;}},
         showControls: {get: function(){return showControls;}, set: function(_){showControls=_;}},
+        brushExtent:    {get: function(){return brushExtent;}, set: function(_){brushExtent=_;}},
         controlLabels: {get: function(){return controlLabels;}, set: function(_){controlLabels=_;}},
         showXAxis:      {get: function(){return showXAxis;}, set: function(_){showXAxis=_;}},
         showYAxis:    {get: function(){return showYAxis;}, set: function(_){showYAxis=_;}},
